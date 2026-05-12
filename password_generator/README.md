@@ -264,6 +264,3 @@ Please make sure all tests pass before submitting.
 
 ---
 
-## 📄 License
-
-MIT © [Your Name](https://github.com/yourusername)

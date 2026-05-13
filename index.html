@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PassGen — Secure Password Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--surface:#111118;--surface2:#16161f;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--accent:#00ff9d;--accent2:#00c97a;--accent-glow:rgba(0,255,157,0.15);--accent-glow2:rgba(0,255,157,0.06);--text:#f0f0f5;--text2:#8888a0;--text3:#55556a;--radius:14px;--radius-sm:8px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,157,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,157,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb1{width:400px;height:400px;background:rgba(0,255,157,0.07);top:-100px;right:-100px}
+.orb2{width:300px;height:300px;background:rgba(0,150,255,0.05);bottom:100px;left:-80px}
+.container{max-width:680px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{padding:60px 0 48px;text-align:center}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--accent-glow2);border:1px solid rgba(0,255,157,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;padding:5px 14px;border-radius:100px;margin-bottom:24px;animation:fadeDown .6s ease both}
+.badge::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+h1{font-family:'Syne',sans-serif;font-size:clamp(42px,8vw,72px);font-weight:800;line-height:1;letter-spacing:-.03em;animation:fadeDown .6s .1s ease both}
+h1 span{color:var(--accent);position:relative}
+h1 span::after{content:'';position:absolute;bottom:4px;left:0;right:0;height:3px;background:var(--accent);border-radius:2px;opacity:.4}
+.tagline{margin-top:16px;font-size:16px;color:var(--text2);font-weight:300;line-height:1.6;animation:fadeDown .6s .2s ease both}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:20px;animation:fadeUp .5s .3s ease both}
+.tab{flex:1;padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border:none;background:none;color:var(--text2);border-radius:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.tab svg{width:14px;height:14px}
+.tab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .5s .4s ease both;margin-bottom:16px}
+.card-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header-title{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase}
+.entropy-badge{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);background:var(--accent-glow2);border:1px solid rgba(0,255,157,0.15);padding:3px 10px;border-radius:100px}
+.pwd-output{padding:28px 24px 20px}
+.pwd-display{font-family:'DM Mono',monospace;font-size:clamp(14px,2.5vw,18px);color:var(--text);word-break:break-all;line-height:1.7;min-height:52px;letter-spacing:.05em}
+.pwd-display .char-upper{color:#74c0fc}
+.pwd-display .char-lower{color:var(--text)}
+.pwd-display .char-digit{color:#ffd60a}
+.pwd-display .char-special{color:var(--accent)}
+.pwd-actions{display:flex;gap:8px;margin-top:16px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .18s;border:none}
+.btn svg{width:15px;height:15px;flex-shrink:0}
+.btn-copy{background:var(--accent);color:#0a0a0f;flex:1}
+.btn-copy:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-copy:active{transform:scale(.98)}
+.btn-copy.copied{background:#00c97a}
+.btn-refresh{background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
+.btn-refresh:hover{color:var(--text);background:#1e1e2a}
+.btn-refresh:active{transform:scale(.97)}
+.strength-section{padding:0 24px 20px}
+.strength-label-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px}
+.strength-word{font-weight:500;font-family:'DM Mono',monospace;letter-spacing:.05em}
+.strength-bits{color:var(--text3);font-family:'DM Mono',monospace}
+.strength-track{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.strength-fill{height:100%;border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1),background .3s}
+.options-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;animation:fadeUp .5s .5s ease both;margin-bottom:16px}
+.options-title{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:20px}
+.slider-row{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.slider-label{font-size:13px;color:var(--text2);min-width:52px}
+.slider-wrap{flex:1}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--surface2);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-shadow:0 0 0 3px var(--accent-glow);cursor:pointer;transition:box-shadow .2s}
+input[type=range]:hover::-webkit-slider-thumb{box-shadow:0 0 0 5px var(--accent-glow)}
+.slider-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--accent);min-width:28px;text-align:right}
+.toggles-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.toggle-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color .2s;user-select:none}
+.toggle-item:hover{border-color:var(--border2)}
+.toggle-item.on{border-color:rgba(0,255,157,0.2)}
+.toggle-left{display:flex;align-items:center;gap:8px}
+.toggle-icon{font-size:15px;width:24px;text-align:center}
+.toggle-text{font-size:12px;font-weight:500;color:var(--text2)}
+.toggle-pill{width:34px;height:18px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;position:relative;transition:background .2s,border-color .2s;flex-shrink:0}
+.toggle-pill::after{content:'';position:absolute;width:12px;height:12px;background:var(--text3);border-radius:50%;top:2px;left:2px;transition:transform .2s,background .2s}
+.toggle-item.on .toggle-pill{background:var(--accent-glow);border-color:var(--accent)}
+.toggle-item.on .toggle-pill::after{background:var(--accent);transform:translateX(16px)}
+.toggle-item.on .toggle-text{color:var(--text)}
+.divider{height:1px;background:var(--border);margin:20px 0}
+.full-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.full-toggle-left{display:flex;flex-direction:column;gap:2px}
+.full-toggle-name{font-size:13px;font-weight:500;color:var(--text2)}
+.full-toggle-desc{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.full-toggle.on .full-toggle-name{color:var(--text)}
+.full-toggle.on .toggle-pill{background:var(--accent-glow);border-color:var(--accent)}
+.full-toggle.on .toggle-pill::after{background:var(--accent);transform:translateX(16px)}
+.batch-list{padding:12px;display:flex;flex-direction:column;gap:6px}
+.batch-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);transition:border-color .15s}
+.batch-item:hover{border-color:var(--border2)}
+.batch-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);min-width:20px}
+.batch-pwd{font-family:'DM Mono',monospace;font-size:13px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini-str{width:36px;height:3px;border-radius:2px;flex-shrink:0}
+.btn-mini{background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;border-radius:5px;display:flex;transition:color .15s,background .15s}
+.btn-mini:hover{color:var(--accent);background:var(--accent-glow2)}
+.btn-mini svg{width:14px;height:14px}
+.phrase-display{padding:28px 24px 20px}
+.phrase-words{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.phrase-word{font-family:'Syne',sans-serif;font-size:clamp(15px,3vw,20px);font-weight:600;padding:6px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+.phrase-sep{font-family:'DM Mono',monospace;font-size:18px;color:var(--accent);display:flex;align-items:center}
+.phrase-num{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--accent);padding:6px 14px;border:1px solid rgba(0,255,157,0.2);border-radius:8px;background:var(--accent-glow2);display:flex;align-items:center}
+footer{padding:32px 0 48px;text-align:center;animation:fadeUp .5s .7s ease both}
+.footer-text{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;line-height:1.8}
+.footer-link{color:var(--accent);text-decoration:none;opacity:.7;transition:opacity .15s}
+.footer-link:hover{opacity:1}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinning{animation:spin .4s linear}
+@media(max-width:480px){.toggles-grid{grid-template-columns:1fr}.pwd-actions{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="container">
+<header>
+  <div class="badge">cryptographically secure</div>
+  <h1>Pass<span>Gen</span></h1>
+  <p class="tagline">Generate secure, random passwords in milliseconds.<br>Powered by Web Crypto API — nothing leaves your browser.</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('single')" id="tab-single">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Single
+  </button>
+  <button class="tab" onclick="switchTab('batch')" id="tab-batch">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Batch (5)
+  </button>
+  <button class="tab" onclick="switchTab('phrase')" id="tab-phrase">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Passphrase
+  </button>
+</div>
+
+<div class="card" id="view-single">
+  <div class="card-header">
+    <span class="card-header-title">Generated Password</span>
+    <span class="entropy-badge" id="entropyBadge">— bits</span>
+  </div>
+  <div class="pwd-output">
+    <div class="pwd-display" id="pwdDisplay">—</div>
+    <div class="pwd-actions">
+      <button class="btn btn-copy" id="copyBtn" onclick="copyPassword()">
+        <svg id="copyIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span id="copyText">Copy Password</span>
+      </button>
+      <button class="btn btn-refresh" id="refreshBtn" onclick="generate()">
+        <svg id="refreshIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Regenerate
+      </button>
+    </div>
+  </div>
+  <div class="strength-section">
+    <div class="strength-label-row">
+      <span class="strength-word" id="strengthWord">—</span>
+      <span class="strength-bits" id="strengthBits">0 bits</span>
+    </div>
+    <div class="strength-track"><div class="strength-fill" id="strengthFill" style="width:0%;background:#333"></div></div>
+  </div>
+</div>
+
+<div class="card" id="view-batch" style="display:none">
+  <div class="card-header">
+    <span class="card-header-title">5 Passwords</span>
+    <button class="btn btn-refresh" style="padding:6px 14px;font-size:12px" onclick="generate()">
+      <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Regenerate all
+    </button>
+  </div>
+  <div class="batch-list" id="batchList"></div>
+</div>
+
+<div class="card" id="view-phrase" style="display:none">
+  <div class="card-header">
+    <span class="card-header-title">Passphrase</span>
+    <span class="entropy-badge" id="phraseEntropy">— bits</span>
+  </div>
+  <div class="phrase-display">
+    <div class="phrase-words" id="phraseWords"></div>
+    <div class="pwd-actions">
+      <button class="btn btn-copy" id="phraseCopyBtn" onclick="copyPhrase()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span id="phraseCopyText">Copy Passphrase</span>
+      </button>
+      <button class="btn btn-refresh" onclick="generate()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        New Phrase
+      </button>
+    </div>
+  </div>
+  <div style="padding:0 24px 20px">
+    <div class="slider-row" style="margin-bottom:0">
+      <span class="slider-label" style="font-size:12px;color:var(--text3)">Words</span>
+      <div class="slider-wrap"><input type="range" min="3" max="8" value="4" id="wordCount" oninput="wcVal.textContent=this.value;generate()"></div>
+      <span class="slider-val" id="wcVal">4</span>
+    </div>
+  </div>
+</div>
+
+<div class="options-card">
+  <div class="options-title">// configuration</div>
+  <div class="slider-row">
+    <span class="slider-label">Length</span>
+    <div class="slider-wrap"><input type="range" min="4" max="64" value="16" id="lengthSlider" oninput="lenVal.textContent=this.value;generate()"></div>
+    <span class="slider-val" id="lenVal">16</span>
+  </div>
+  <div class="toggles-grid">
+    <div class="toggle-item on" id="tog-upper" onclick="toggleOpt('upper')">
+      <div class="toggle-left"><span class="toggle-icon">🔤</span><span class="toggle-text">Uppercase A–Z</span></div>
+      <div class="toggle-pill"></div>
+    </div>
+    <div class="toggle-item on" id="tog-lower" onclick="toggleOpt('lower')">
+      <div class="toggle-left"><span class="toggle-icon">🔡</span><span class="toggle-text">Lowercase a–z</span></div>
+      <div class="toggle-pill"></div>
+    </div>
+    <div class="toggle-item on" id="tog-digits" onclick="toggleOpt('digits')">
+      <div class="toggle-left"><span class="toggle-icon">🔢</span><span class="toggle-text">Digits 0–9</span></div>
+      <div class="toggle-pill"></div>
+    </div>
+    <div class="toggle-item on" id="tog-special" onclick="toggleOpt('special')">
+      <div class="toggle-left"><span class="toggle-icon">✦</span><span class="toggle-text">Special !@#$</span></div>
+      <div class="toggle-pill"></div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="full-toggle" id="tog-ambig-row" onclick="toggleOpt('ambig')">
+    <div class="full-toggle-left">
+      <span class="full-toggle-name">Exclude ambiguous characters</span>
+      <span class="full-toggle-desc">removes: 0 O 1 l I |</span>
+    </div>
+    <div class="toggle-pill" id="ambigPill"></div>
+  </div>
+</div>
+
+<footer>
+  <p class="footer-text">
+    Built by <a class="footer-link" href="https://github.com/Aksadio" target="_blank">@Aksadio</a> &nbsp;·&nbsp;
+    <a class="footer-link" href="https://github.com/Aksadio/password-generator" target="_blank">View on GitHub</a><br><br>
+    Web Crypto API — 100% client-side. Zero data sent anywhere.
+  </p>
+</footer>
+</div>
+
+<script>
+const WORDS=["apple","brave","cloud","delta","eagle","flame","green","honey","ivory","jewel","kite","lemon","maple","noble","ocean","pearl","quill","river","stone","tiger","ultra","vivid","water","xenon","yacht","zebra","amber","blaze","crisp","dawn","frost","glide","hazel","jolly","karma","lunar","magic","north","orbit","prism","quiet","rocky","swift","thorn","upper","vault","windy","pixel","radar","sigma","topaz","vigor","comet","drift","ember","flare","glyph","haven","icing","joker","kudos","lotus","mossy","nerve","omega","punch","quest","relay","shard","trove","unity","venom","waltz","yodel","zesty"];
+const opts={upper:true,lower:true,digits:true,special:true,ambig:false};
+let currentTab='single',currentPwd='',currentPhrase='';
+
+function rndInt(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n}
+function buildCharset(){const UP='ABCDEFGHIJKLMNOPQRSTUVWXYZ',LO='abcdefghijklmnopqrstuvwxyz',DI='0123456789',SP='!@#$%^&*()-_=+[]{}|;:,.<>?',AMB='0O1lI|';let s='';if(opts.upper)s+=UP;if(opts.lower)s+=LO;if(opts.digits)s+=DI;if(opts.special)s+=SP;if(opts.ambig)s=s.split('').filter(c=>!AMB.includes(c)).join('');return s}
+function makePwd(len,charset){if(!charset)return'';const a=new Uint32Array(len);crypto.getRandomValues(a);return Array.from(a).map(v=>charset[v%charset.length]).join('')}
+function entropy(len,size){return size>1?(len*Math.log2(size)):0}
+function strengthInfo(bits){if(bits<28)return{label:'Very Weak',pct:8,color:'#ff4d6d'};if(bits<36)return{label:'Weak',pct:25,color:'#ff9f43'};if(bits<60)return{label:'Fair',pct:52,color:'#ffd60a'};if(bits<80)return{label:'Strong',pct:78,color:'#74c0fc'};return{label:'Very Strong',pct:100,color:'#00ff9d'}}
+function charClass(c){if(/[A-Z]/.test(c))return'char-upper';if(/[a-z]/.test(c))return'char-lower';if(/[0-9]/.test(c))return'char-digit';return'char-special'}
+function coloredPwd(pwd){return pwd.split('').map(c=>`<span class="${charClass(c)}">${c}</span>`).join('')}
+
+function generate(){
+  const len=parseInt(document.getElementById('lengthSlider').value);
+  const charset=buildCharset();
+  if(currentTab==='single'){
+    if(!charset){document.getElementById('pwdDisplay').innerHTML='<span style="color:var(--text3)">select at least one type</span>';return}
+    currentPwd=makePwd(len,charset);
+    document.getElementById('pwdDisplay').innerHTML=coloredPwd(currentPwd);
+    const bits=entropy(len,charset.length);
+    const si=strengthInfo(bits);
+    document.getElementById('entropyBadge').textContent=Math.round(bits)+' bits';
+    document.getElementById('strengthFill').style.width=si.pct+'%';
+    document.getElementById('strengthFill').style.background=si.color;
+    document.getElementById('strengthWord').textContent=si.label;
+    document.getElementById('strengthWord').style.color=si.color;
+    document.getElementById('strengthBits').textContent=Math.round(bits)+' bits entropy';
+  } else if(currentTab==='batch'){
+    if(!charset)return;
+    const list=document.getElementById('batchList');list.innerHTML='';
+    for(let i=0;i<5;i++){
+      const pwd=makePwd(len,charset);
+      const si=strengthInfo(entropy(len,charset.length));
+      const d=document.createElement('div');d.className='batch-item';
+      const safePwd=pwd.replace(/'/g,"\\'");
+      d.innerHTML=`<span class="batch-num">${String(i+1).padStart(2,'0')}</span><span class="batch-pwd">${pwd}</span><div class="mini-str" style="background:${si.color};opacity:.7"></div><button class="btn-mini" title="Copy" onclick="navigator.clipboard.writeText('${safePwd}');this.style.color='#00ff9d'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+      list.appendChild(d);
+    }
+  } else {
+    const wc=parseInt(document.getElementById('wordCount').value);
+    const chosen=Array.from({length:wc},()=>{const w=WORDS[rndInt(WORDS.length)];return w.charAt(0).toUpperCase()+w.slice(1)});
+    const num=10+rndInt(90);
+    currentPhrase=chosen.join('-')+'-'+num;
+    const container=document.getElementById('phraseWords');container.innerHTML='';
+    chosen.forEach((w,i)=>{
+      const span=document.createElement('span');span.className='phrase-word';span.textContent=w;container.appendChild(span);
+      if(i<chosen.length-1){const sep=document.createElement('span');sep.className='phrase-sep';sep.textContent='—';container.appendChild(sep)}
+    });
+    const sep=document.createElement('span');sep.className='phrase-sep';sep.textContent='—';container.appendChild(sep);
+    const numEl=document.createElement('span');numEl.className='phrase-num';numEl.textContent=num;container.appendChild(numEl);
+    document.getElementById('phraseEntropy').textContent=Math.round(wc*Math.log2(WORDS.length)+Math.log2(90))+' bits';
+  }
+}
+
+function toggleOpt(key){
+  if(key==='ambig'){opts.ambig=!opts.ambig;document.getElementById('tog-ambig-row').classList.toggle('on',opts.ambig)}
+  else{const on=['upper','lower','digits','special'].filter(k=>opts[k]).length;if(opts[key]&&on<=1)return;opts[key]=!opts[key];document.getElementById('tog-'+key).classList.toggle('on',opts[key])}
+  generate();
+}
+
+function switchTab(t){
+  currentTab=t;
+  ['single','batch','phrase'].forEach(id=>{document.getElementById('view-'+id).style.display=id===t?'block':'none';document.getElementById('tab-'+id).classList.toggle('active',id===t)});
+  generate();
+}
+
+function copyPassword(){
+  if(!currentPwd)return;
+  navigator.clipboard.writeText(currentPwd).then(()=>{
+    const btn=document.getElementById('copyBtn'),txt=document.getElementById('copyText');
+    btn.classList.add('copied');txt.textContent='Copied!';
+    setTimeout(()=>{btn.classList.remove('copied');txt.textContent='Copy Password'},1500);
+  });
+}
+
+function copyPhrase(){
+  if(!currentPhrase)return;
+  navigator.clipboard.writeText(currentPhrase).then(()=>{
+    const btn=document.getElementById('phraseCopyBtn'),txt=document.getElementById('phraseCopyText');
+    btn.classList.add('copied');txt.textContent='Copied!';
+    setTimeout(()=>{btn.classList.remove('copied');txt.textContent='Copy Passphrase'},1500);
+  });
+}
+
+document.getElementById('refreshBtn').addEventListener('click',function(){const i=document.getElementById('refreshIcon');i.classList.add('spinning');setTimeout(()=>i.classList.remove('spinning'),400)});
+generate();
+</script>
+</body>
+</html>
